@@ -1,0 +1,60 @@
+#########################################################################################
+# DATE: 07-05-2017
+# Program to calculate Q-tomography in 2D
+#
+#########################################################################################
+# goto directory 'tomo'
+# Files:
+#	cata.txt		(input file contains Q at different frequencies and other parameters like Lat & Long of evenet and receiver)
+#	weight.py		(python script to calculate area overlap of ellipse with square grid and saving it in file Gmatrix.txt)
+#	back_tomo.f90		(fortran file to run 2D tomography and calculate Q tomo values at different frequencies)
+#	Q0_calc.py		(python file to calculate Q0 and eta tomo from Q output files *_output.txt, where * is a frequency)
+#	run.sh			(master shell to run all scripts at one go)
+#	clean.sh		(shell scrit to clear all output files)
+#
+# Output:
+#	Q_result.txt		(Q tomo output file) | Format:  "lat   long   Q0"
+#	n_result.txt		(eta tomo output file) | Format:  "lat   long   eta"
+#	*_output.txt		(Q(f) tomo output file) | Format:  "lat   long   Q(f)" | where "f" is frequency
+#
+# Crucial parameters:
+#	dp:		in 'back_tomo.f90' file this I usually take as 1/N, where N = total no. of event-receiver paths or it can also be set by hit and trial method
+#	iteration:	in 'back_tomo.f90' file this can also be set using hit and trial method
+#
+# RUN:
+#	./run.sh
+#
+#
+########################################################################################
+# Resolution test (psf):
+#	goto directory 'psf'
+# files:
+#	check_make.f90		(fortran file to make check, which is used an input in 'forward_calc.f90' file for forward calculation)
+#	forward_calc.f90	(fortran script for forward calculation of Q0 for each ellipse) - "at line 17 change no. of observations"
+#	back_calc.f90		(fortran script for backward calculation and gives output that can be compared with input genereted using 'check_make.f90')
+#	run.sh			(mother shell script to run all scripts at one go)
+#
+# output:
+#	inp.txt			(output from 'check_make.f90' contains checker)
+#	Q_inp.txt		(output from 'forward_calc.f90' contains Q values that is used as an input in 'back_calc.f90')
+#	output.txt		(output from 'back_calc.f90' contains reovered model this result can be compared with 'inp.txt' to compute resolution)
+#
+# RUN:
+#	./run.sh
+#
+#
+#######################################################################################
+# Plotting (in GMT):
+#	goto directory 'plot'
+# files:
+#	ellipse_plot.gmt:	input-'ellipse_para.dat'		output-'ellipse_map.ps'	(plots ellipse for each event-receiver path)
+#	grid_tomo_plot.gmt:	input-'Q_out.txt & n_out.txt'		output-'NE_tomo_map.ps'	(plots Q & eta tomographic map)
+#	all_tomo_plot.gmt:	input-'??_out.txt'			output-'NE_tomo_all.ps'	(plots Q tomographic map at every frequency)
+#	psf_plot.gmt:		input-'inp.txt, output.txt & box'	output-'NE_psf_map.ps'	(plots point spreading function)
+#
+# RUN:
+#	1. goto 'inp_files' directory and run `./copy.sh` & `./norm_Q.sh`
+#	2. then run individual gmt scripts for plotting
+#
+#
+########################################################################################

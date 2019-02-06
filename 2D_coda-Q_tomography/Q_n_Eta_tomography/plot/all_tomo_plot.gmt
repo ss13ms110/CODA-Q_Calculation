@@ -1,0 +1,90 @@
+#!/bin/bash
+
+#########################################################################
+#
+# Script to plot Q tomography for all frequencies
+#
+#########################################################################
+resource_dir="./gmt_resources"
+
+over=" "
+out=NE_tomo_all
+xrn=1.3
+yrn=15
+rm -f ${out}.ps
+
+
+
+# overriding gmt defaults for paper media
+gmt gmtset MAP_FRAME_TYPE plain 
+gmt gmtset FONT_ANNOT_PRIMARY 12p,Helvetica
+gmt gmtset MAP_FRAME_PEN 1p
+gmt gmtset PS_MEDIA B4
+
+# Mercator projecton
+proj="-JM7.0"
+#proj="-JB70/106/20/50/7.5i"
+# Map bounds
+bounds="-R85/97/22/32" #NE_IMD
+miscB="-Ba4f2.0:'Long':/a4f2.0:'Lat':NWse"
+misc="-V"
+
+for i in 01 02 03 05 08 10 12 14
+do
+
+avg_Q=`cat inp_files/avg_txt | awk -v var=$i '{if ($2 == var) print $1}' | awk -F"." '{print $1}'`
+
+
+if [ $i == 08 ]
+then
+yrn=-11
+xrn=1.3
+fi
+
+#read infile
+Q_infile=inp_files/${i}_out.txt		#Q file
+
+max=`sort -nk3,3 $Q_infile | tail -1 | awk '{print $3}' | awk -F"." '{print $1+1}'` 
+min=`sort -nk3,3 $Q_infile | head -1 | awk '{print $3}' | awk -F"." '{print $1-1}'`
+
+anot=`echo $max $min | awk '{print ($1-$2)/5.0}' | awk '{print $1}'`
+annot=`printf "%4.2f", $anot`
+
+########################### TRIANGULATE for Q #################################################################################
+#make cpt file
+min=-50
+max=40
+annot=10
+gmt makecpt -Cseis -T$min/$max/5 -Z > Q_all_tomo.cpt
+
+#triangulate 
+awk '{print $1, $2, $3}' $Q_infile | gmt triangulate -Gcodaq.grd $bounds -I0.2/0.2
+
+################## cpt and grid files here #######################################
+gridfile=$resource_dir/etopo2.grd
+cptfile=Q_all_tomo.cpt
+##################################################################################
+
+gmt grdsample codaq.grd -Gcodaq1.grd -I1m $bounds
+gmt grdsample ${gridfile} -GIndia.grd -I1m $bounds
+gmt grdgradient India.grd -A270 -fg -Nt -Gindia.int 
+gmt grdimage codaq1.grd -C${cptfile} -Iindia.int $bounds $proj ${miscB} $over -K ${misc} -Xf$xrn -Y$yrn >> ${out}.ps
+gmt pscoast $proj $bounds -W0.8p -Di -A100  -O -K -N1/0.8p,0/0/255 >> ${out}.ps
+gmt psscale -D3.5c/-0.5c/7c/.4ch -C${cptfile} -Ba$annot:"Qa = $avg_Q": -K -O >> ${out}.ps
+#gmt grdcontour codaq.grd -R $proj -O -A20+g+f -L$min/$max -K -Wa0.5p ${misc} >> ${out}.ps 
+echo "86.5 23 $i Hz" | gmt pstext -K -O $proj -R -F+f16p,Times-Bold >> ${out}.ps 
+
+
+over="-O"
+xrn=`echo $xrn | awk '{print $1+8.5}'`
+yrn=0
+
+done
+
+gmt psxy ${proj} ${bounds} -O < /dev/null >> ${out}.ps
+# plotting the map
+gv ${out}.ps
+mv ${out}.ps ps_files
+# cleaning up default files and grd files
+rm -f .gmtcommands4 .gmtdefaults4 codaq.grd codaq1.grd India.grd india.int gmt.conf gmt.history 
+

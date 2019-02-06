@@ -1,0 +1,55 @@
+####################################################################
+# DATE: 06-05-2017
+# program to calculate Q0 and eta for multiple event receiver paths
+#
+# files:
+#	run.sh			(mother shell script to do basic calculations and executing fortran files)
+#	Q0_calc.f90		(fortran script to calculate Q at particular frequency, f)
+#	Q_f_calc.f90		(fortran script to calculate Q0 and eta)
+#	t_amp_plot.py		(python script to plot t Vs log(amp) )
+#	Q_f_calc.py		(python script tp plot log(f) Vs log(Q) )
+#	freq_file		(file contains frequency to be used)
+#	catalogue_make.py	(python script to make catalogue of Q0, eta, dist, lat, long, etc)
+#	catalogue_run.sh	(shell script to make catalogue and arrange data)
+#
+# Run:
+#	in order to calculate Q0 and eta, follow steps:
+#	step 1:
+#		cd data		(keep all your events folder in 'data' folder and use velocity files with P marked at A-marker and S T0-marker)
+#	
+#	step 2:
+#		./../scripts/run.sh	(run shell file, the output Q0 and eta values will be saved in 'Q_data.txt' file in respective event folders)
+		INPUT: give the value of lapse time as input (e.g., 60)
+#
+# plots:
+#	plots are optional comment the plot part off in order to generate plots
+#
+# catalogue:	(stay in 'data' folder)
+#
+#	./../scripts/catalogue_run.sh
+#
+# Output:
+#
+#	'cata.txt'	(file with all necessary data to run tomography)
+#
+# Format of 'cata.txt'
+#	
+#	"Filename	Q0	dQ	Slat	Slong	Rlat	Rlong	2ts    dist(km) dep(km) f1	Qf1	dQf1	f2	Qf2	dQf2	f3	      Qf3	dQf3	f4	Qf4	dQf4	f5	Qf5	dQf5	f5	Qf6	dQf6	f7	Qf7	dQf7	f8	Qf8	dQf8"
+#
+##################################################################################################
+# Ellipse parameters calculation:
+# files:
+#	ell_calc.sh		(shell script to calculate ellipse parameters by taking input from cata.txt and it also gives sorted catalogue file)
+#	azcalc.py		(python script to calculate: azimuth, backazimuth and distance (Km & degree) for two given points)
+# Run:
+#	goto directory 'ellipse_calc'
+#	run shell script:
+#		./ell_calc.sh		(It will give two outputs)
+#	Output:
+#	(1)	ellipse_para.dat	(contains all parameters to make ellipse)
+#		Format: 'file e_lat e_long s_lat s_long c_lat c_long 2ts maj_axis min_axis azimuth'
+#
+#	(2)	sorted_cata.txt		(contains same data as 'cata.txt' but excluding those event-receiver paths with large major_axix)
+#
+#
+##################################################################################################

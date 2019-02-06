@@ -1,0 +1,88 @@
+#!/bin/bash
+
+#########################################################################
+#
+# Script to plot PSF
+#
+#########################################################################
+
+w_dir="/home/RESOURCES/GMT_resources/"
+
+#read infile
+infile=inp.txt		#Q file
+outfile=output.txt		#eta file
+box=box
+out=psf_map
+
+# overriding gmt defaults for paper media
+gmt gmtset MAP_FRAME_TYPE plain 
+gmt gmtset FONT_ANNOT_PRIMARY 12p,Helvetica
+gmt gmtset MAP_FRAME_PEN 1p
+
+# Mercator projecton
+proj="-JM12.0"
+#proj="-JB70/106/20/50/7.5i"
+# Map bounds
+bounds="-R85/96.5/22/31" #NE_IMD
+miscB="-Ba4f2.0:'Long':/a4f2.0:'Lat':NWSe"
+misc="-V"
+
+########################### TRIANGULATE for Q #################################################################################
+#make cpt file
+gmt makecpt -Cgray -I -T0/1.0/0.05 > psf_inp.cpt
+
+#triangulate 
+#awk '{print $1, $2, $3}' $infile | gmt triangulate -Gcodaq.grd $bounds -I0.2/0.2
+
+################## cpt and grid files here #######################################
+gridfile=$w_dir/GRD_files/etopo2.grd
+cptfile=psf_inp.cpt
+##################################################################################
+
+#gmt grdsample codaq.grd -Gcodaq1.grd -I1m $bounds
+gmt grdsample ${gridfile} -GIndia.grd -I1m $bounds
+gmt grdgradient India.grd -A270 -fg -Nt -Gindia.int 
+#gmt grdimage codaq1.grd -C${cptfile} -Iindia.int $bounds $proj ${miscB} -K ${misc} -X1.3 -Y4 > ${out}.ps
+gmt grdimage India.grd -Iindia.int $bounds -C20/20/20,80/80/80,200/200/200,white $proj ${miscB} -K ${misc} -X1.3 -Y4 > ${out}.ps
+#gmt psscale -D6.0c/-1.0c/12c/.4ch -C${cptfile} -Ba0.2:"1/Q": -K -O >> ${out}.ps
+#gmt grdcontour codaq.grd -R $proj -O -A0.5+g+f -L0/1 -K -Wa0.5p ${misc} >> ${out}.ps 
+awk '{print $1, $2, $3}' $infile | gmt psxy -K -O $proj -R -Ss0.35c -C${cptfile} >>${out}.ps
+gmt pscoast $proj $bounds -W0.8p -Di -A100  -O -K -N1/0.9p,0/0/255 >> ${out}.ps
+
+
+##########################################################################################################################
+#-------------------------------------------------------------------------------------------------------------------------
+########################### TRIANGULATE for ETA ##########################################################################
+miscB="-Ba4f2.0:'Long':/a4f2.0:'Lat':NwSE"
+#make cpt file
+gmt makecpt -Cgray -I -T0/1.0/0.05 > psf_out.cpt
+gmt makecpt -Cgray -I -T0.0/1.0/0.05 > tmp.cpt
+
+#triangulate 
+#awk '{print $1, $2, $3}' $outfile | gmt triangulate -Gcodaq.grd $bounds -I0.2/0.2
+
+################## cpt and grid files here #######################################
+cptfile=psf_out.cpt
+tmpcpt=tmp.cpt
+##################################################################################
+
+#gmt grdsample codaq.grd -Gcodaq1.grd -I1m $bounds
+gmt grdsample ${gridfile} -GIndia.grd -I1m $bounds
+gmt grdgradient India.grd -A270 -fg -Nt -Gindia.int 
+#gmt grdimage codaq1.grd -C${cptfile} -Iindia.int $bounds $proj ${miscB} -O -K ${misc} -X14.0 -Y0 >> ${out}.ps
+gmt grdimage India.grd -C20/20/20,80/80/80,200/200/200,white -Iindia.int $bounds $proj ${miscB} -O -K ${misc} -X14.0 -Y0 >> ${out}.ps
+gmt psscale -D-1.0c/-1.0c/6c/.4ch -C${tmpcpt} -Ba0.25:"1/Q": -K -O >> ${out}.ps
+#gmt grdcontour codaq.grd -R $proj -O -A0.2+g+f -L0/1.1 -K -Wa0.5p ${misc} >> ${out}.ps 
+awk '{print $1, $2, $3}' $outfile | gmt psxy -K -O $proj -R -Ss0.35c -C${cptfile} >>${out}.ps
+gmt pscoast $proj $bounds -W0.8 -Di -A100  -O -K -N1/0.8p,0/0/255 >> ${out}.ps
+
+awk '{print $1, $2}' $box | gmt psxy -K -O $proj -R -W1p,0/0/0 >> ${out}.ps
+
+# End of plot ########################################
+gmt psxy ${proj} ${bounds} -O < /dev/null >> ${out}.ps
+# plotting the map
+gv ${out}.ps
+
+# cleaning up default files and grd files
+rm -f codaq.grd codaq1.grd India.grd india.int gmt.conf gmt.history psf_inp.cpt psf_out.cpt tmp.cpt
+

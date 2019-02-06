@@ -1,0 +1,88 @@
+#!/bin/bash
+
+#########################################################################
+#
+# Script to plot Q tomography
+#
+#########################################################################
+
+resource_dir="./gmt_resources"
+
+#read infile
+Q_infile=inp_files/Q_result.txt		#Q file
+eta_infile=inp_files/n_result.txt	#eta file
+cata=inp/cata.txt
+out=NE_tomo_map
+
+maxQ=`sort -u -k3 $Q_infile | tail -2 | head -1 | awk '{print $3+5}'`
+minQ=`sort -g -k3 $Q_infile | head -1 | awk '{print $3-5}'`
+
+maxn=`sort -u -k3 $eta_infile | tail -2 | head -1 | awk '{print $3+0.03}'`
+minn=`sort -g -k3 $eta_infile | head -1 | awk '{print $3}'`
+
+echo
+echo $minQ $maxQ $minn $maxn
+echo
+# overriding gmt defaults for paper media
+gmt gmtset MAP_FRAME_TYPE plain 
+gmt gmtset FONT_ANNOT_PRIMARY 12p,Helvetica
+gmt gmtset MAP_FRAME_PEN 1p
+
+# Mercator projecton
+proj="-JM12.0"
+#proj="-JB70/106/20/50/7.5i"
+# Map bounds
+bounds="-R85/97/22/31" #NE_IMD
+miscB="-Ba3f1.5/a3f1.5/NWSe"
+misc="-V"
+
+########################### TRIANGULATE for Q #################################################################################
+#make cpt file
+minQ=125
+maxQ=355
+gmt makecpt -Cseis -T$minQ/$maxQ/10 > Q_tomo.cpt
+
+################## cpt and grid files here #######################################
+gridfile=$resource_dir/INDIA.grd
+cptfile=Q_tomo.cpt
+
+##################################################################################
+
+#gmt grdsample codaq.grd -Gcodaq1.grd -I1m $bounds
+gmt grdsample ${gridfile} -GIndia.grd -I1m $bounds
+gmt grdgradient India.grd -A270 -fg -Nt -Gindia.int 
+gmt grdimage India.grd -Iindia.int $bounds -C50/50/50,100/100/100,200/200/200,white $proj ${miscB} -K ${misc} -X1.3 -Y4 > ${out}.ps
+gmt psscale -D6.0c/-1.0c/12c/.4ch -C${cptfile} -Ba25:Q0: -K -O >> ${out}.ps
+#gmt grdcontour codaq.grd -R $proj -O -A40+g+f -L80/400 -K -Wa0.5p ${misc} >> ${out}.ps 
+awk '{print $1, $2, $3}' $Q_infile | gmt psxy -K -O $proj -R -Ss0.35c -C${cptfile} -t30 >>${out}.ps
+gmt pscoast $proj $bounds -W0.8p -Di -A100  -O -K -N1/0.8p,0/0/255 >> ${out}.ps
+
+##########################################################################################################################
+#-------------------------------------------------------------------------------------------------------------------------
+########################### TRIANGULATE for ETA ##########################################################################
+miscB="-Ba4f2.0/a4f2.0/NwSE"
+#make cpt file
+gmt makecpt -Cseis -T$minn/$maxn/0.03 > eta_tomo.cpt
+
+################## cpt and grid files here #######################################
+cptfile=eta_tomo.cpt
+##################################################################################
+
+#gmt grdsample codaq.grd -Gcodaq1.grd -I1m $bounds
+gmt grdsample ${gridfile} -GIndia.grd -I1m $bounds
+gmt grdgradient India.grd -A270 -fg -Nt -Gindia.int 
+gmt grdimage India.grd -C50/50/50,100/100/100,200/200/200,white -Iindia.int $bounds $proj ${miscB} -O -K ${misc} -X14.0 -Y0 >> ${out}.ps
+gmt psscale -D6.0c/-1.0c/12c/.4ch -C${cptfile} -Ba0.08:eta: -K -O >> ${out}.ps
+#gmt grdcontour codaq.grd -R $proj -O -A0.1+g+f -L0.85/1.3 -K -Wa0.5p ${misc} >> ${out}.ps 
+awk '{print $1, $2, $3}' $eta_infile | gmt psxy -K -O $proj -R -Ss0.35c -C${cptfile} -t30 >>${out}.ps
+gmt pscoast $proj $bounds -W0.8p -Di -A100  -O -K -N1/0.8p,0/0/255 >> ${out}.ps
+##########################################################################################################################
+
+##########################################################################################################################
+gmt psxy ${proj} ${bounds} -O < /dev/null >> ${out}.ps
+# plotting the map
+gv ${out}.ps
+mv ${out}.ps ps_files
+# cleaning up default files and grd files
+rm -f .gmtcommands4 .gmtdefaults4 codaq.grd codaq1.grd India.grd india.int gmt.conf gmt.history
+

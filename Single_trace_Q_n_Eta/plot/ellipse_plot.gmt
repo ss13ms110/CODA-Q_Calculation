@@ -1,0 +1,71 @@
+#!/bin/bash
+
+################################################################################
+#
+# Copy 'ellipse_para.txt' in the directory where this 'ellipse_plot.gmt' file is
+#
+################################################################################
+w_dir="/home/RESOURCES/GMT_resources"
+
+#get ellipse parameters file
+ellipse_input=`echo "ellipse_para.dat"`
+
+
+# overriding gmt defaults for paper media ####################
+gmt gmtset MAP_FRAME_TYPE plain 
+gmt gmtset FONT_ANNOT_PRIMARY 12p,Helvetica
+gmt gmtset MAP_FRAME_PEN 1p
+
+##### making the map ######################
+# Mercator projecton
+proj="-JM18.0"
+# Equal area projection
+#proj="-JB44/130/7/61/8i"
+bounds="-R83/100/19.5/34.5"
+miscB="-Ba5f2.5"
+misc="-P"
+out=ellipse_map.ps
+echo "output file is $out"
+
+################## cpt and grid files here #######################################
+gridfile=$w_dir/GRD_files/INDIA.grd
+cptfile=$w_dir/CPT_files/india_colour.cpt
+##################################################################################
+
+gmt grdgradient ${gridfile} -Nt1 -A45 -Gglobal.grd
+
+gmt grdimage ${gridfile} -Iglobal.grd -C${cptfile} -V $bounds $miscB $proj -K > ${out}
+
+gmt pscoast -K $proj $bounds -W1 -Di -A100 -N1/0.8 -O >> $out
+
+# Plotting the ellipse
+awk '{print $7, $6, -$11, $9*111.11, $10*111.11}' ${ellipse_input} | gmt psxy $proj -R -K -O -SE  -W0.5p,- >> ${out}
+
+# location of event
+awk '{print $3, $2}' $ellipse_input | gmt psxy -R -K -O $proj -Sc0.16c -G255/0/0 -W0 >> ${out}
+
+# location of station
+awk '{print $5, $4}' $ellipse_input | gmt psxy -K -O $proj -R -St0.4c -G255/255/255 -W0.5,0/0/0 >>${out}
+#awk '{print $4, $3}' $iris_sta | gmt psxy -K -O $proj -R -St0.4c -G255/255/0 -W0 >>${out}
+
+#Legend for the symbols used
+#gmt pslegend -R -J -O -K -F+g255/255/255+p0.8 -Dx16/14.8/1.5i/0.5i/TC -C0.1i/0.1i -Vn << EOF >> ${out}
+#S 0.4c t 0.40 0/0/255 0.7p 0.3i Stations
+#S 0.4c c 0.30 255/0/0 0.7p 0.3i Events
+#EOF
+
+### end of plot #####################################
+gmt psxy ${proj} ${bounds} -O < /dev/null >> ${out}
+
+# plotting the map
+gv ${out}
+
+#cleaning up 
+rm -f INDIA_temp.grd gmt.conf gmt.history global.grd
+# end
+
+
+
+
+
+
