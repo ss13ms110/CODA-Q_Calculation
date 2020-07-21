@@ -123,7 +123,7 @@ implicit none
 			do k = 1, Ng
 				sm = sm + Gmat(k,j)/Qm0(k)
 			end do
-			resid1(j) = sn(j)/Q0(j) - sm
+			resid1(j) = (sn(j)/Q0(j) - sm)/sn(j)
 !-----------------------------------------------------------
 ! little modifications for plot
 			Q_con(j) = sn(j)/sm
