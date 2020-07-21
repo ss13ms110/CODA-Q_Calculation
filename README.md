@@ -11,7 +11,8 @@
     ```
 2. 2D_coda-Q_tomography
     ```
-    Scripts for doing 2D Coda-Q tomography. The directory contain its own README file for detailed explanation of how to run the codes.
+    Scripts for doing 2D Coda-Q tomography. 
+    The directory contain its own README file for detailed explanation of how to run the codes.
     ```
 
 #### If you find any bug or having any difficulty in using package contact sharma@gfz-potsdam.de
